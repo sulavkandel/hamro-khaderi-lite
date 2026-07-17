@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: hamro-khaderi-api
+    env: docker
+    dockerfilePath: deploy/Dockerfile.backend
+    rootDir: .
+    plan: free
+    healthCheckPath: /api/v1/health/
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hamro-khaderi-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "0"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: "*"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "*"
+      - key: SCHEDULER_AUTOSTART
+        value: "1"
+
+databases:
+  - name: hamro-khaderi-db
+    plan: free
+    databaseName: khaderi
+    user: khaderi
