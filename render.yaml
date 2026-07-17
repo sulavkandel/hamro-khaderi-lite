@@ -7,10 +7,26 @@ services:
     plan: free
     healthCheckPath: /api/v1/health/
     envVars:
-      - key: DATABASE_URL
+      - key: POSTGRES_DB
         fromDatabase:
           name: hamro-khaderi-db
-          property: connectionString
+          property: database
+      - key: POSTGRES_USER
+        fromDatabase:
+          name: hamro-khaderi-db
+          property: user
+      - key: POSTGRES_PASSWORD
+        fromDatabase:
+          name: hamro-khaderi-db
+          property: password
+      - key: POSTGRES_HOST
+        fromDatabase:
+          name: hamro-khaderi-db
+          property: host
+      - key: POSTGRES_PORT
+        fromDatabase:
+          name: hamro-khaderi-db
+          property: port
       - key: DJANGO_SECRET_KEY
         generateValue: true
       - key: DJANGO_DEBUG
