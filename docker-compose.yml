@@ -1,0 +1,52 @@
+# Hamro Khaderi-Lite — full stack.
+#   docker compose up --build
+#   First run: docker compose exec api python manage.py migrate
+#              docker compose exec api python manage.py seed_districts
+#              docker compose exec api python manage.py ingest --from 2012-01-01
+#              docker compose exec api python manage.py compute_spi
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: khaderi
+      POSTGRES_USER: khaderi
+      POSTGRES_PASSWORD: khaderi
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U khaderi"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.backend
+    environment:
+      POSTGRES_HOST: db
+      POSTGRES_DB: khaderi
+      POSTGRES_USER: khaderi
+      POSTGRES_PASSWORD: khaderi
+      DJANGO_DEBUG: "0"
+      DJANGO_ALLOWED_HOSTS: "*"
+      SCHEDULER_AUTOSTART: "1"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_API_BASE: http://localhost:8000/api/v1
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
