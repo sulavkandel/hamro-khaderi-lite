@@ -1,24 +1,50 @@
 # 🌾 Hamro Khaderi-Lite — Terai Drought Monitor
 
-![CI](https://github.com/USER/REPO/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![Django](https://img.shields.io/badge/django-5.x-green)
 ![Next.js](https://img.shields.io/badge/next.js-14-black)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-District-level **SPI (Standardized Precipitation Index)** drought monitoring
-dashboard for Nepal's Terai — inspired by DHM's Khaderi Monitoring Tool.
-Pilot districts: **Kailali, Bardiya, Kapilvastu**.
+**Hamro Khaderi-Lite** is a localized, full-stack drought monitoring and early warning dashboard designed specifically for the Terai region of Nepal. By providing clear, science-backed severity indicators, this tool empowers NGOs, local governments, and farmers to make informed decisions regarding agriculture and water resource management.
 
-> **Prototype** — not an official DHM product. Data: Open-Meteo (ERA5
-> reanalysis). For research/education only.
+Pilot districts currently monitored: **Kailali, Bardiya, and Kapilvastu**.
 
-**नेपाली:** यो परियोजना नेपालको तराईका जिल्लाहरूको खडेरी अवस्था अनुगमन गर्ने
-प्रोटोटाइप ड्यासबोर्ड हो। प्रत्येक बिहीबार वर्षाको तथ्याङ्क अद्यावधिक गरी
-SPI-3, SPI-6 र SPI-12 गणना गरिन्छ, र नक्सा तथा चार्टमा देखाइन्छ। यो DHM को
-आधिकारिक उत्पादन होइन — अनुसन्धान र शिक्षाका लागि मात्र।
+> **🌟 Live Dashboard (Frontend):** [https://frontend-jade-tau-zq7c5shuaq.vercel.app](https://frontend-jade-tau-zq7c5shuaq.vercel.app)
+> **⚙️ Live API (Backend):** [https://hamro-khaderi-api.onrender.com/api/v1/health/](https://hamro-khaderi-api.onrender.com/api/v1/health/)
 
-## Architecture
+---
+
+## 🎯 Our Mission
+
+Droughts in the Terai region pose a significant threat to Nepal's food security and agricultural livelihoods. **Hamro Khaderi-Lite** addresses this challenge by automating the collection of complex climate data and transforming it into accessible, bilingual (English & नेपाली), and visually intuitive drought severity maps and charts.
+
+Our goal is to bridge the gap between meteorological data and on-the-ground action.
+
+---
+
+## 📊 Data Sources & Methodology
+
+This project adheres to international meteorological standards to ensure the highest data integrity.
+
+### 1. Data Sources
+- **[Open-Meteo API](https://open-meteo.com/):** We utilize the highly accurate **ERA5 reanalysis dataset** (provided by the European Centre for Medium-Range Weather Forecasts) for daily historical precipitation data dating back to 2012.
+- **DHM Integration Ready:** The system is architected with an adapter pattern, making it fully ready to integrate with the official **Department of Hydrology and Meteorology (DHM), Nepal** API in the future.
+
+### 2. Scientific Methodology
+We utilize the **Standardized Precipitation Index (SPI)**, the drought index endorsed by the **World Meteorological Organization (WMO)**.
+- **Reference:** *McKee, T.B., Doesken, N.J. and Kleist, J., 1993.* [The relationship of drought frequency and duration to time scales.](https://climate.colostate.edu/pdfs/McKee_et_al_1993.pdf)
+- **Calculations:** The system calculates SPI on 3-month (SPI-3), 6-month (SPI-6), and 12-month (SPI-12) timescales using a Gamma distribution fit with zero-rain mixture models to accurately capture both short-term agricultural droughts and long-term hydrological droughts.
+
+---
+
+## 💻 Technical Architecture
+
+The dashboard is powered by a robust, modern technology stack:
+
+- **Frontend:** Built with **Next.js 14**, React, and TailwindCSS for a highly responsive, fast, and accessible user interface. Interactive maps are powered by **Leaflet**, and historical charts by **Chart.js**.
+- **Backend:** Built with **Django 5 & Django REST Framework (DRF)**.
+- **Database:** **PostgreSQL** is used to store millions of daily precipitation records and computed snapshots securely.
+- **Automation:** An integrated **APScheduler** runs a background pipeline every Thursday at 06:00 AM (Asia/Kathmandu) to automatically ingest new weather data, run quality control, and compute the latest SPI values.
 
 ```mermaid
 flowchart LR
@@ -32,95 +58,48 @@ flowchart LR
     API --> WEB[Next.js 14 dashboard\nLeaflet map + Chart.js]
 ```
 
-## Features
+---
 
-- **Weekly pipeline** (Thursdays 06:00 Asia/Kathmandu, APScheduler):
-  ingest daily precipitation → QC → compute SPI-3/6/12 → snapshot.
-- **SPI engine**: per-calendar-month gamma fit with zero-rain mixture
-  (McKee et al. 1993), scipy-based, ±3.5 clamp, degenerate-data guards.
-- **Adapter pattern**: `WEATHER_SOURCE=open_meteo|dhm` env switch;
-  DHM stub ready for a future official API.
-- **REST API** with a uniform `{data, meta, errors}` envelope + Swagger docs.
-- **Dashboard**: Leaflet severity map, district list, SPI-3/6/12 Chart.js
-  history, bilingual EN/नेपाली toggle.
-- **42 pytest tests**, GitHub Actions CI (Postgres service + frontend build).
+## 🚀 Quickstart (Local Development)
 
-## Quickstart (local)
-
+### 1. Backend (Django API)
 ```bash
-# 1. Backend
 cd backend
 pip install -r requirements-dev.txt
-# PostgreSQL: create user/db khaderi/khaderi/khaderi (or: export USE_SQLITE=1)
+export USE_SQLITE=1  # Use SQLite for local testing
 python manage.py migrate
 python manage.py seed_districts
-python manage.py ingest --from 2012-01-01   # ~1 min, real Open-Meteo data
+python manage.py ingest --from 2012-01-01   # Fetches real historical data
 python manage.py compute_spi
 python manage.py runserver 0.0.0.0:8000
+```
+*API Documentation (Swagger): [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/)*
 
-# 2. Frontend (new terminal)
+### 2. Frontend (Next.js)
+```bash
 cd frontend
 npm install
-npm run dev       # http://localhost:3000
+npm run dev
 ```
+*View the app at: [http://localhost:3000](http://localhost:3000)*
 
-Swagger: http://localhost:8000/api/docs/
+---
 
-## Docker
+## 🌍 Deployment
 
-```bash
-docker compose up --build
-docker compose exec api python manage.py migrate
-docker compose exec api python manage.py seed_districts
-docker compose exec api python manage.py ingest --from 2012-01-01
-docker compose exec api python manage.py compute_spi
-# web: http://localhost:3000   api: http://localhost:8000/api/docs/
-```
+This project is configured for seamless deployment:
+- **Backend Infrastructure-as-Code:** Uses `render.yaml` and `Dockerfile.backend` for instant automated deployment to [Render](https://render.com/).
+- **Frontend Platform:** Optimized for edge deployment on [Vercel](https://vercel.com/) by connecting the `NEXT_PUBLIC_API_BASE` environment variable to the live Django API.
+- **Auto-Seeding:** The backend Dockerfile is configured to automatically run data ingestion on startup, ensuring the database is always populated even on ephemeral platforms.
 
-## API
+---
 
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/v1/districts/` | List districts |
-| GET | `/api/v1/districts/{id}/spi/?scale=3\|6\|12` | Full SPI time series |
-| GET | `/api/v1/districts/{id}/current/` | Latest Thursday snapshot (all scales) |
-| GET | `/api/v1/map/current/?scale=3` | GeoJSON for the map |
-| POST | `/api/v1/ingest/run/` | Trigger pipeline (auth required) |
-| GET | `/api/v1/health/` | Health check |
+## 📚 Documentation & References
 
-All responses use the envelope `{ "data": ..., "meta": {...}, "errors": [...] }`.
+- [World Meteorological Organization (WMO) SPI Guidelines](https://public.wmo.int/en)
+- [Open-Meteo Historical Weather Documentation](https://open-meteo.com/en/docs/historical-weather-api)
+- [Architecture Decision Records (ADR)](docs/DECISIONS.md)
+- [System Architecture Details](docs/architecture.md)
 
-## Data model
-
-- `districts` — name (EN/NE), slug, province, centroid lat/lng
-- `daily_precip` — district × date × source, `precip_mm` (NULL = failed QC/missing)
-- `spi_snapshots` — district × Thursday × scale, SPI value + severity class
-- `ingestion_runs` — audit log (ok/partial/failed, rows upserted/rejected)
-
-## Management commands
-
-```bash
-python manage.py seed_districts                 # idempotent district seed
-python manage.py ingest --days 14               # recent window (default source)
-python manage.py ingest --from 2012-01-01       # full history backfill
-python manage.py ingest --district kailali --source open_meteo
-python manage.py compute_spi                    # snapshots for last Thursday
-python manage.py compute_spi --for 2026-07-16
-```
-
-## Deployment
-
-- `deploy/nginx.conf` — reverse proxy (API :8000, web :3000)
-- `deploy/ecosystem.config.js` — PM2 for a single VM
-- `deploy/Dockerfile.backend` + `deploy/Dockerfile.frontend` + `docker-compose.yml`
-- Frontend can also deploy to Vercel (set `NEXT_PUBLIC_API_BASE` to your API URL);
-  the Django API needs a Python host (Railway/Fly/EC2/etc.), not Vercel.
-
-## Docs
-
-- [docs/DECISIONS.md](docs/DECISIONS.md) — architecture decision records
-- [docs/architecture.md](docs/architecture.md) — component walk-through
-
-## License
-
-MIT (prototype).
+## 📄 License
+This project is licensed under the MIT License. It is currently a prototype for research and educational purposes.
